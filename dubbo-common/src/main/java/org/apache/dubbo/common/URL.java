@@ -90,6 +90,10 @@ import static org.apache.dubbo.common.utils.StringUtils.isBlank;
  * for this case, url protocol = null, url host = home, url path = user1/router.js
  * </ul>
  *
+ *
+ * 资料： https://zhuanlan.zhihu.com/p/98561575
+ * dubbo 认为 protocol，username，passwored，host，port，path 是主要的 URL 参数，其他键值对存放在 parameters 之中
+ *
  * @see java.net.URL
  * @see java.net.URI
  */
@@ -193,6 +197,7 @@ class URL implements Serializable {
         this(protocol, username, password, host, port, path, parameters, toMethodParameters(parameters));
     }
 
+    // 重点是这个方法参数， 说明了对应的主要关键
     public URL(String protocol,
                String username,
                String password,

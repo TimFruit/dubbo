@@ -17,6 +17,8 @@
 package org.apache.dubbo.rpc;
 
 /**
+ * 服务暴露
+ *  https://blog.csdn.net/weixin_30539625/article/details/95903673?utm_medium=distribute.pc_feed_404.none-task-blog-2~default~BlogCommendFromBaidu~Rate-1-95903673-blog-null.262^v1^pc_404_mixedpudn&depth_1-utm_source=distribute.pc_feed_404.none-task-blog-2~default~BlogCommendFromBaidu~Rate-1-95903673-blog-null.262^v1^pc_404_mixedpud
  * Exporter. (API/SPI, Prototype, ThreadSafe)
  *
  * @see org.apache.dubbo.rpc.Protocol#export(Invoker)

@@ -516,17 +516,20 @@ public class DubboBootstrap {
             return;
         }
 
+        // 扩展框架 初始化 spi
         ApplicationModel.initFrameworkExts();
 
+        // 启动配置中心
         startConfigCenter();
 
         loadRemoteConfigs();
 
         checkGlobalConfigs();
 
-        // @since 2.7.8
+        // @since 2.7.8 // 启动meta管理
         startMetadataCenter();
 
+        // 初始化 meta 服务
         initMetadataService();
 
         if (logger.isInfoEnabled()) {
@@ -593,12 +596,12 @@ public class DubboBootstrap {
     }
 
     private void startConfigCenter() {
-
+        // 使用注册中心当做配置中心
         useRegistryAsConfigCenterIfNecessary();
 
         Collection<ConfigCenterConfig> configCenters = configManager.getConfigCenters();
 
-        // check Config Center
+        // check Config Center -- 有可能为空
         if (CollectionUtils.isEmpty(configCenters)) {
             ConfigCenterConfig configCenterConfig = new ConfigCenterConfig();
             configCenterConfig.refresh();

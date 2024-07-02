@@ -98,6 +98,12 @@ import static org.apache.dubbo.rpc.Constants.SCOPE_REMOTE;
 import static org.apache.dubbo.rpc.Constants.TOKEN_KEY;
 import static org.apache.dubbo.rpc.cluster.Constants.EXPORT_KEY;
 
+/**
+ * 暴露服务 - 到注册中心之类的
+ *
+ * <link>https://blog.csdn.net/weixin_30539625/article/details/95903673?utm_medium=distribute.pc_feed_404.none-task-blog-2~default~BlogCommendFromBaidu~Rate-1-95903673-blog-null.262^v1^pc_404_mixedpudn&depth_1-utm_source=distribute.pc_feed_404.none-task-blog-2~default~BlogCommendFromBaidu~Rate-1-95903673-blog-null.262^v1^pc_404_mixedpud</link>
+ * @param <T>
+ */
 public class ServiceConfig<T> extends ServiceConfigBase<T> {
 
     private static final long serialVersionUID = -412700146501624375L;
@@ -204,7 +210,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
     }
 
     @Override
-    public synchronized void export() {
+    public synchronized void export() {//暴露服务url
         if (bootstrap == null) {
             bootstrap = DubboBootstrap.getInstance();
             // compatible with api call.
@@ -317,6 +323,8 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void doExportUrls() {
+        // repository 导出url
+        logger.info(">>>ttx 暴露url start");
         ServiceRepository repository = ApplicationModel.getServiceRepository();
         ServiceDescriptor serviceDescriptor = repository.registerService(getInterfaceClass());
         repository.registerProvider(
@@ -326,7 +334,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
                 this,
                 serviceMetadata
         );
-
+        // registry://127.0.0.1:8848/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-api-provider&dubbo=2.0.2&pid=9992&registry=nacos&timestamp=1719927777963
         List<URL> registryURLs = ConfigValidationUtils.loadRegistries(this, true);
 
         int protocolConfigNum = protocols.size();
@@ -338,6 +346,8 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
             repository.registerService(pathKey, interfaceClass);
             doExportUrlsFor1Protocol(protocolConfig, registryURLs, protocolConfigNum);
         }
+
+        logger.info(">>>ttx 暴露url end");
     }
 
     private void doExportUrlsFor1Protocol(ProtocolConfig protocolConfig, List<URL> registryURLs, int protocolConfigNum) {
