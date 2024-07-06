@@ -108,6 +108,8 @@ public class Environment extends LifecycleAdapter implements FrameworkExt {
     }
 
     /**
+     *
+     * 获取有优先级顺序的配置
      * At start-up, Dubbo is driven by various configuration, such as Application, Registry, Protocol, etc.
      * All configurations will be converged into a data bus - URL, and then drive the subsequent process.
      * <p>

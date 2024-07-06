@@ -16,11 +16,10 @@
  */
 package org.apache.dubbo.demo.provider;
 
-import org.apache.dubbo.config.ApplicationConfig;
-import org.apache.dubbo.config.RegistryConfig;
-import org.apache.dubbo.config.ServiceConfig;
+import org.apache.dubbo.config.*;
 import org.apache.dubbo.config.bootstrap.DubboBootstrap;
 import org.apache.dubbo.demo.DemoService;
+import org.apache.dubbo.rpc.Constants;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -38,14 +37,22 @@ public class MyNacosProviderApplication {
     }
 
     private static void startWithBootstrap() {
-        ServiceConfig<DemoServiceImpl> service = new ServiceConfig<>();
-        service.setInterface(DemoService.class);
-        service.setRef(new DemoServiceImpl());
+        ServiceConfig<DemoServiceImpl> serviceConfig = new ServiceConfig<>();
+        serviceConfig.setInterface(DemoService.class);
+        serviceConfig.setRef(new DemoServiceImpl());
+        serviceConfig.setScope(Constants.SCOPE_LOCAL);  // ------- 这个就是ServiceScope 对应的范围配置
+
+        ProviderConfig providerConfig = new ProviderConfig();
+        providerConfig.setScope(Constants.SCOPE_LOCAL); // 使用本地 -- providerConfig 也可以，
+        // 有优先级 org.apache.dubbo.config.ServiceConfig.doExportUrlsFor1Protocol
+
 
         DubboBootstrap bootstrap = DubboBootstrap.getInstance();
         bootstrap.application(new ApplicationConfig("dubbo-demo-api-provider"))
-                .registry(new RegistryConfig("nacos://127.0.0.1:8848"))
-                .service(service)
+//                .registry(new RegistryConfig("nacos://127.0.0.1:8848"))
+                .registry(new RegistryConfig("dubbo://127.0.0.1:9090"))
+//                .provider(providerConfig)
+                .service(serviceConfig)
                 .start()
                 .await();
     }

@@ -602,6 +602,17 @@ public class DubboBootstrap {
         Collection<ConfigCenterConfig> configCenters = configManager.getConfigCenters();
 
         // check Config Center -- 有可能为空
+        // configCenterConfig.refresh()  -- 调用set方法设置环境中的属性值
+        // 这里会刷新配置中心的配置，合并当前关于配置中心的属性。
+        // 如配置中心的地址、协议等可能会在环境变量、外部配置、代码执行等多种方式指定，
+        // 此时需要根据优先级来获取优先级最高的配置属性参数作为最终参数用于初始化配置中心。
+        // 简单来说就是确定需要加载的配置中心的一些信息
+        /*
+        //   待确定 TODO
+            // 1. 刷新配置中心，按照优先级合并配置信息,因为配置文件具有优先级，系统配置优先级最高，如下配置顺序
+            // isConfigCenterFirst = true : SystemConfiguration -> ExternalConfiguration -> AppExternalConfiguration -> AbstractConfig -> PropertiesConfiguration
+            // isConfigCenterFirst = false : SystemConfiguration -> AbstractConfig -> ExternalConfiguration -> AppExternalConfiguration -> PropertiesConfiguration
+         */
         if (CollectionUtils.isEmpty(configCenters)) {
             ConfigCenterConfig configCenterConfig = new ConfigCenterConfig();
             configCenterConfig.refresh();
@@ -623,6 +634,9 @@ public class DubboBootstrap {
             }
             environment.setDynamicConfiguration(compositeDynamicConfiguration);
         }
+
+        // 刷新全部配置，将外部配置中心的配置应用到本地
+        // 这里会触发其他配置类的配置刷新操作，其他配置类会从 Environment 中读取到配置中心设置的内容，以完成自身内容的更新
         configManager.refreshAll();
     }
 
@@ -652,6 +666,8 @@ public class DubboBootstrap {
     }
 
     /**
+     * 为了兼容性，当没有指定Config Center 的地址，并且注册中心使用的zookeeper协议时，就使用注册中心的地址作为Config Center的地址
+     *
      * For compatibility purpose, use registry as the default config center when
      * there's no config center specified explicitly and
      * useAsConfigCenter of registryConfig is null or true
@@ -882,11 +898,12 @@ public class DubboBootstrap {
         if (started.compareAndSet(false, true)) {
             destroyed.set(false);
             ready.set(false);
+            // 初始化
             initialize();
             if (logger.isInfoEnabled()) {
                 logger.info(NAME + " is starting...");
             }
-            // 1. export Dubbo Services
+            // 1. export Dubbo Services  服务发布 暴露服务到注册中心
             exportServices();
 
             // Not only provider register

@@ -191,29 +191,50 @@ public class ConfigValidationUtils {
         if (CollectionUtils.isNotEmpty(registries)) {
             for (RegistryConfig config : registries) {
                 String address = config.getAddress();
+                // 如果注册中心地址为空，则设置为 0.0.0.0
                 if (StringUtils.isEmpty(address)) {
                     address = ANYHOST_VALUE;
                 }
+                // 排除不可用的地址 （地址信息为 N/A）
                 if (!RegistryConfig.NO_AVAILABLE.equalsIgnoreCase(address)) {
+                    // 参数会拼接到map 中，最后会将map 转换成url
                     Map<String, String> map = new HashMap<String, String>();
+                    /************* 1. 参数解析，将参数添加到 Map 中 **************/
+                    // 添加 ApplicationConfig 中的字段信息到 map 中
                     AbstractConfig.appendParameters(map, application);
+                    // 添加 RegistryConfig 字段信息到 map 中
                     AbstractConfig.appendParameters(map, config);
+                    // 添加 path、pid，protocol 等信息到 map 中
+                    // 设置注册中心的 path 为 RegistryService
                     map.put(PATH_KEY, RegistryService.class.getName());
+                    // 拼接运行时参数
                     AbstractInterfaceConfig.appendRuntimeParameters(map);
+                    // 设置默认协议类型为 dubbo
                     if (!map.containsKey(PROTOCOL_KEY)) {
                         map.put(PROTOCOL_KEY, DUBBO_PROTOCOL);
                     }
+
+
+                    /************* 2. 根据 address 和 map 将信息转化为 URL **************/
+                    // 根据协议类型将map转化成URL
+                    // dubbo 协议如下格式: zookeeper://localhost:2181/org.apache.dubbo.registry.RegistryService?application=Api-provider&dubbo=2.0.2&pid=24736&release=2.7.0&timestamp=1615539839228
+                    // 这里返回URL 列表，因为address 可能包含多个注册中心。address 被正则切割，每个地址对应一个URL
                     List<URL> urls = UrlUtils.parseURLs(address, map);
 
                     if (urls == null) {
                         throw new IllegalStateException(String.format("url should not be null,address is %s", address));
                     }
+                    /************* 3. 对 URL 进行进一步处理 **************/
                     for (URL url : urls) {
 
                         url = URLBuilder.from(url)
+                                // 保存服务暴露使用的注册中心的协议
                                 .addParameter(REGISTRY_KEY, url.getProtocol())
+                                // 设置 url 协议为 registry，表示当前URL 用于配置注册中心
                                 .setProtocol(extractRegistryType(url))
                                 .build();
+                        // 通过判断条件，决定是否添加 url 到 registryList 中
+                        // 满足两个条件会往里添加：1、是服务提供者且需要想(默认想)注册中心注册；2、不是提供者但订阅了注册中心
                         if ((provider && url.getParameter(REGISTER_KEY, true))
                                 || (!provider && url.getParameter(SUBSCRIBE_KEY, true))) {
                             registryList.add(url);

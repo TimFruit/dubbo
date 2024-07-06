@@ -468,9 +468,12 @@ public abstract class AbstractConfig implements Serializable {
     }
 
     public void refresh() {
+        // 获取环境
         Environment env = ApplicationModel.getEnvironment();
         try {
+            //  获取有优先级顺序的配置 - (多个配置 preifx="dubbo.config-center.", systemctConfig,environment,inmemoryConfig,inmemeorCOnfi,COnfigConfiAdpater,PropertiesConfig)
             CompositeConfiguration compositeConfiguration = env.getPrefixedConfiguration(this);
+            // 调用当前配置类(ConfigCenterConfig) set方法设置属性新值
             // loop methods, get override value and set the new value back to method
             Method[] methods = getClass().getMethods();
             for (Method method : methods) {
@@ -487,6 +490,7 @@ public abstract class AbstractConfig implements Serializable {
                                 ", please make sure every property has getter/setter method provided.");
                     }
                 } else if (isParametersSetter(method)) {
+                    // 按配置优先级获取对应属性值
                     String value = StringUtils.trim(compositeConfiguration.getString(extractPropertyName(getClass(), method)));
                     if (StringUtils.isNotEmpty(value)) {
                         Map<String, String> map = invokeGetParameters(getClass(), this);
