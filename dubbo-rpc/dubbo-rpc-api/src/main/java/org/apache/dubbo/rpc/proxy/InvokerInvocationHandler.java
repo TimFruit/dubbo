@@ -64,6 +64,7 @@ public class InvokerInvocationHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        // 调用方法
         if (method.getDeclaringClass() == Object.class) {
             return method.invoke(invoker, args);
         }
@@ -92,7 +93,8 @@ public class InvokerInvocationHandler implements InvocationHandler {
             rpcInvocation.put(Constants.CONSUMER_MODEL, consumerModel);
             rpcInvocation.put(Constants.METHOD_MODEL, consumerModel.getMethodModel(method));
         }
-
+        // 这里创建了一个 RpcInvocation 来作为调用参数载体
+        // 执行 invoker#invoke 来调用方法。
         return invoker.invoke(rpcInvocation).recreate();
     }
 }

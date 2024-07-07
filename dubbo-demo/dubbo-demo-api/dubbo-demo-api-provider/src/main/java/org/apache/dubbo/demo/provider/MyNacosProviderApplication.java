@@ -40,17 +40,17 @@ public class MyNacosProviderApplication {
         ServiceConfig<DemoServiceImpl> serviceConfig = new ServiceConfig<>();
         serviceConfig.setInterface(DemoService.class);
         serviceConfig.setRef(new DemoServiceImpl());
-        serviceConfig.setScope(Constants.SCOPE_LOCAL);  // ------- 这个就是ServiceScope 对应的范围配置
+//        serviceConfig.setScope(Constants.SCOPE_LOCAL);  // ------- 这个就是ServiceScope 对应的范围配置
 
-        ProviderConfig providerConfig = new ProviderConfig();
-        providerConfig.setScope(Constants.SCOPE_LOCAL); // 使用本地 -- providerConfig 也可以，
+//        ProviderConfig providerConfig = new ProviderConfig();
+//        providerConfig.setScope(Constants.SCOPE_LOCAL); // 使用本地 -- providerConfig 也可以，
         // 有优先级 org.apache.dubbo.config.ServiceConfig.doExportUrlsFor1Protocol
 
 
         DubboBootstrap bootstrap = DubboBootstrap.getInstance();
         bootstrap.application(new ApplicationConfig("dubbo-demo-api-provider"))
-//                .registry(new RegistryConfig("nacos://127.0.0.1:8848"))
-                .registry(new RegistryConfig("dubbo://127.0.0.1:9090"))
+                .registry(new RegistryConfig("nacos://127.0.0.1:8848"))
+//                .registry(new RegistryConfig("dubbo://127.0.0.1:9090"))
 //                .provider(providerConfig)
                 .service(serviceConfig)
                 .start()

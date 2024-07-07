@@ -38,17 +38,17 @@ public class MyNacosConsumerApplication {
     }
 
     private static void runWithBootstrap() {
-        ReferenceConfig<DemoService> reference = new ReferenceConfig<>();
-        reference.setInterface(DemoService.class);
-        reference.setGeneric("true");
+        ReferenceConfig<DemoService> referenceConfig = new ReferenceConfig<>();
+        referenceConfig.setInterface(DemoService.class);
+        referenceConfig.setGeneric("true");
 
         DubboBootstrap bootstrap = DubboBootstrap.getInstance();
         bootstrap.application(new ApplicationConfig("dubbo-demo-api-consumer"))
                 .registry(new RegistryConfig("nacos://127.0.0.1:8848"))
-                .reference(reference)
+                .reference(referenceConfig)
                 .start();
 
-        DemoService demoService = ReferenceConfigCache.getCache().get(reference);
+        DemoService demoService = ReferenceConfigCache.getCache().get(referenceConfig);
         String message = demoService.sayHello("dubbo");
         System.out.println(message);
 
