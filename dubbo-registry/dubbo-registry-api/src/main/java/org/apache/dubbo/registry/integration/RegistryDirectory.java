@@ -72,6 +72,10 @@ import static org.apache.dubbo.rpc.cluster.Constants.ROUTER_KEY;
 
 /**
  * RegistryDirectory
+ *
+ * 代表了多个invoker（对于消费端来说，每个invoker代表了一个服务提供者），
+ * 其内部维护着一个List，并且这个List的内容是动态变化的，
+ * 比如当服务提供者集群新增或者减少机器时，服务注册中心就会推送当前服务提供者的地址列表，然后Directory中的List就会根据服务提供者地址列表相应变化
  */
 public class RegistryDirectory<T> extends DynamicDirectory<T> {
     private static final Logger logger = LoggerFactory.getLogger(RegistryDirectory.class);
@@ -91,10 +95,13 @@ public class RegistryDirectory<T> extends DynamicDirectory<T> {
 
     @Override
     public void subscribe(URL url) {
+        // 记录消费者 URL，记录当前 RegistryDirectory 代表哪个 URL
         setConsumerUrl(url);
+        // 添加到监听器集合
         CONSUMER_CONFIGURATION_LISTENER.addNotifyListener(this);
         referenceConfigurationListener = new ReferenceConfigurationListener(this, url);
-        registry.subscribe(url, this);
+        // url 为订阅的节点信息，this 即订阅结束后的回调监听器实例
+        registry.subscribe(url, this); //订阅并注册当前ResgisryDircetory当做监听器，注册中心回调调用#notify方法更新invoker
     }
 
     @Override
@@ -105,21 +112,32 @@ public class RegistryDirectory<T> extends DynamicDirectory<T> {
         registry.unsubscribe(url, this);
     }
 
+    /**
+     * 注册中心回调调用#notify方法更新invoker
+     * @param urls The list of registered information , is always not empty. The meaning is the same as the return value of {@link org.apache.dubbo.registry.RegistryService#lookup(URL)}.
+     */
     @Override
     public synchronized void notify(List<URL> urls) {
+        //  对 URLs 进行过滤
         Map<String, List<URL>> categoryUrls = urls.stream()
                 .filter(Objects::nonNull)
                 .filter(this::isValidCategory)
                 .filter(this::isNotCompatibleFor26x)
                 .collect(Collectors.groupingBy(this::judgeCategory));
-
+        // 1. 筛选出配置信息URL 并转换成 configurators，保存到 RegistryDirectory#configurators 属性中
+        // 筛选条件是 url protocol = override || url category = configurators
         List<URL> configuratorURLs = categoryUrls.getOrDefault(CONFIGURATORS_CATEGORY, Collections.emptyList());
         this.configurators = Configurator.toConfigurators(configuratorURLs).orElse(this.configurators);
 
+        // 2. 筛选出路由URL 并转换成Router 添加到 RegistryDirectory#routerChain 中
+        // 筛选条件是 url protocol = route || url category = routers
+        // RouterChain 保存了服务提供者的URL列表转换为invoker列表和可用服务提供者对应的invokers列表和路由规则信息
         List<URL> routerURLs = categoryUrls.getOrDefault(ROUTERS_CATEGORY, Collections.emptyList());
         toRouters(routerURLs).ifPresent(this::addRouters);
 
         // providers
+        // 3. 筛选出 提供者URL 并进行服务提供者的更新
+        // 筛选条件是 url protocol != override && url protocol != route &&  url category = providers
         List<URL> providerURLs = categoryUrls.getOrDefault(PROVIDERS_CATEGORY, Collections.emptyList());
         /**
          * 3.x added for extend URL address
@@ -131,6 +149,8 @@ public class RegistryDirectory<T> extends DynamicDirectory<T> {
                 providerURLs = addressListener.notify(providerURLs, getConsumerUrl(), this);
             }
         }
+
+        //刷新invoker
         refreshOverrideAndInvoker(providerURLs);
     }
 

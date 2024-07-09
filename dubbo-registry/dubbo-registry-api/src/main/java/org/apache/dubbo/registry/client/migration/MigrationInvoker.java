@@ -292,6 +292,7 @@ public class MigrationInvoker<T> implements MigrationClusterInvoker<T> {
             if (logger.isDebugEnabled()) {
                 logger.debug("Re-subscribing instance addresses, current interface " + type.getName());
             }
+            // 这里会真实创建Invoker
             serviceDiscoveryInvoker = registryProtocol.getServiceDiscoveryInvoker(cluster, registry, type, url);
 
             if (migrationMultiRegistry) {
@@ -322,6 +323,7 @@ public class MigrationInvoker<T> implements MigrationClusterInvoker<T> {
         directory.setInvokersChangedListener(listener);
     }
 
+    // 走这个刷新创建获取invoker
     @Override
     public synchronized void refreshInterfaceInvoker() {
         clearListener(invoker);

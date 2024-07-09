@@ -460,6 +460,8 @@ public class RegistryProtocol implements Protocol {
     @Override
     @SuppressWarnings("unchecked")
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
+        // RegistryProtocol#refer 是在存在注册中心的情况下才会调用
+        //取 registry 参数值，并将其设置为协议头 获取注册中心协议类型，并获取注册中心实例。
         url = getRegistryUrl(url);
         Registry registry = getRegistry(url);
         if (RegistryService.class.equals(type)) {
@@ -467,26 +469,35 @@ public class RegistryProtocol implements Protocol {
         }
 
         // group="a,b" or group="*"
+        // 将 url 查询字符串转为 Map
         Map<String, String> qs = StringUtils.parseQueryString(url.getParameterAndDecoded(REFER_KEY));
+        // 获取 group 配置
         String group = qs.get(GROUP_KEY);
         if (group != null && group.length() > 0) {
             if ((COMMA_SPLIT_PATTERN.split(group)).length > 1 || "*".equals(group)) {
+                // 1. 如果是多分组的情况下，通过 SPI 加载 MergeableCluster 实例，并调用 doRefer 继续执行服务引用逻辑。
                 return doRefer(Cluster.getCluster(MergeableCluster.NAME), registry, type, url, qs);
             }
         }
 
+        // 2. 调用 doRefer 继续执行服务引用逻辑
         Cluster cluster = Cluster.getCluster(qs.get(CLUSTER_KEY));
         return doRefer(cluster, registry, type, url, qs);
     }
 
     protected <T> Invoker<T> doRefer(Cluster cluster, Registry registry, Class<T> type, URL url, Map<String, String> parameters) {
+        // 生成服务消费者订阅的 URL，供后面使用
         URL consumerUrl = new URL(CONSUMER_PROTOCOL, parameters.remove(REGISTER_IP_KEY), 0, type.getName(), parameters);
+        // 一个注册中心可能有多个服务提供者，因此这里需要将多个服务提供者合并为一
         ClusterInvoker<T> migrationInvoker = getMigrationInvoker(this, cluster, registry, type, url, consumerUrl);
+        // listener(MigrationRuleListener)处理构造对应的Invokder
         return interceptInvoker(migrationInvoker, url, consumerUrl);
     }
 
     protected <T> ClusterInvoker<T> getMigrationInvoker(RegistryProtocol registryProtocol, Cluster cluster, Registry registry,
                                                         Class<T> type, URL url, URL consumerUrl) {
+
+        // 后续这个interceptInvoker会通过监听器回调方法#migrateToServiceDiscoveryInvoker构造内部的invoker
         return new ServiceDiscoveryMigrationInvoker<T>(registryProtocol, cluster, registry, type, url, consumerUrl);
     }
 
@@ -497,6 +508,8 @@ public class RegistryProtocol implements Protocol {
         }
 
         for (RegistryProtocolListener listener : listeners) {
+            // MigrationRuleListener 会处理调用构造内部的invoker
+            // MigrationRuleHandler 会调用本类#getInvoker方法创建invoker
             listener.onRefer(this, invoker, consumerUrl);
         }
         return invoker;
@@ -507,25 +520,49 @@ public class RegistryProtocol implements Protocol {
         return doCreateInvoker(directory, cluster, registry, type);
     }
 
+    // MigrationRuleHandler 会调用这个方法创建invoker
     public <T> ClusterInvoker<T> getInvoker(Cluster cluster, Registry registry, Class<T> type, URL url) {
         // FIXME, this method is currently not used, create the right registry before enable.
         DynamicDirectory<T> directory = new RegistryDirectory<>(type, url);
         return doCreateInvoker(directory, cluster, registry, type);
     }
 
+    /**
+     * 真正创建invoker
+     * @param directory
+     * @param cluster
+     * @param registry
+     * @param type
+     * @return
+     * @param <T>
+     */
     protected <T> ClusterInvoker<T> doCreateInvoker(DynamicDirectory<T> directory, Cluster cluster, Registry registry, Class<T> type) {
         directory.setRegistry(registry);
         directory.setProtocol(protocol);
         // all attributes of REFER_KEY
         Map<String, String> parameters = new HashMap<String, String>(directory.getConsumerUrl().getParameters());
         URL urlToRegistry = new URL(CONSUMER_PROTOCOL, parameters.remove(REGISTER_IP_KEY), 0, type.getName(), parameters);
+        // urlToRegistry: consumer://192.168.1.166/org.apache.dubbo.rpc.service.GenericService?application=dubbo-demo-api-consumer&dubbo=2.0.2&generic=true&interface=org.apache.dubbo.demo.DemoService&pid=18364&side=consumer&sticky=false&timestamp=1720535829995
         if (directory.isShouldRegister()) {
             directory.setRegisteredConsumerUrl(urlToRegistry);
+            // *** 注册消费者数据到注册中心 - provider service, consumer address, route rule, override rule and other data
             registry.register(directory.getRegisteredConsumerUrl());
         }
+        // 1.建立路由规则链,即 解析并设置了routerChain属性
+        // 构建引用服务的路由链。当消费者发起调用时，路由链会筛选满足路由条件的提供者列表进入下一过程的处理
         directory.buildRouterChain(urlToRegistry);
+
+
+        // 2. *** 订阅 providers、configurators、routers 等节点数据
+        // 订阅引用服务的相关节点。当提供者相关信息更新后，消费者通过订阅的这些节点可以感知并更新自身的引用信息
+        // Registry.subscribe 会注册监听器 RegistryDirectory-实现了NotifyListener，注册中心回调之后调用#
+        // toSubscribeUrl(urlToRegistry) = consumer://192.168.1.166/org.apache.dubbo.rpc.service.GenericService?application=dubbo-demo-api-consumer&category=providers,configurators,routers&dubbo=2.0.2&generic=true&interface=org.apache.dubbo.demo.DemoService&pid=12948&side=consumer&sticky=false&timestamp=1720535526794
         directory.subscribe(toSubscribeUrl(urlToRegistry));
 
+
+
+        // 3. 包装机器容错机制到invoker  添加容错策略。决定消费者一次调用失败后的策略，是重试还是抛出异常亦或是返回一个空的结果集
+        // 一个注册中心可能有多个服务提供者，因此这里需要将多个服务提供者合并为一
         return (ClusterInvoker<T>) cluster.join(directory);
     }
 
@@ -544,6 +581,8 @@ public class RegistryProtocol implements Protocol {
     }
 
     protected List<RegistryProtocolListener> findRegistryProtocolListeners(URL url) {
+        // 拓展机制寻找完整文件名为 org.apache.dubbo.registry.integration.RegistryProtocolListener
+        // 的配置
         return ExtensionLoader.getExtensionLoader(RegistryProtocolListener.class)
                 .getActivateExtension(url, REGISTRY_PROTOCOL_LISTENER_KEY);
     }

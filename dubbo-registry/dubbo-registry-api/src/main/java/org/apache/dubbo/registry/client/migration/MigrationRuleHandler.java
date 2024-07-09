@@ -61,7 +61,7 @@ public class MigrationRuleHandler<T> {
                     migrationInvoker.migrateToServiceDiscoveryInvoker(true);
                     break;
                 case FORCE_INTERFACE:
-                default:
+                default:// 默认走这个
                     migrationInvoker.fallbackToInterfaceInvoker();
             }
         }
