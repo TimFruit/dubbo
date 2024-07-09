@@ -284,7 +284,7 @@ public abstract class AbstractRegistry implements Registry {
         if (url == null) {
             throw new IllegalArgumentException("register url == null");
         }
-        if (logger.isInfoEnabled()) {
+        if (logger.isInfoEnabled()) { // ttx 重点日志
             logger.info("Register: " + url);
         }
         registered.add(url);
@@ -309,7 +309,7 @@ public abstract class AbstractRegistry implements Registry {
         if (listener == null) {
             throw new IllegalArgumentException("subscribe listener == null");
         }
-        if (logger.isInfoEnabled()) {
+        if (logger.isInfoEnabled()) { // ttx 重点日志
             logger.info("Subscribe: " + url);
         }
         Set<NotifyListener> listeners = subscribed.computeIfAbsent(url, n -> new ConcurrentHashSet<>());
@@ -406,7 +406,7 @@ public abstract class AbstractRegistry implements Registry {
             logger.warn("Ignore empty notify urls for subscribe url " + url);
             return;
         }
-        if (logger.isInfoEnabled()) {
+        if (logger.isInfoEnabled()) {// ttx 重点日志
             logger.info("Notify urls for subscribe url " + url + ", urls: " + urls);
         }
         // keep every provider's category.
