@@ -59,6 +59,13 @@ public class Exchangers {
         return bind(URL.valueOf(url), handler);
     }
 
+    /**
+     * dubbo协议通过这个创建服务端
+     * @param url
+     * @param handler
+     * @return
+     * @throws RemotingException
+     */
     public static ExchangeServer bind(URL url, ExchangeHandler handler) throws RemotingException {
         if (url == null) {
             throw new IllegalArgumentException("url == null");
@@ -66,7 +73,10 @@ public class Exchangers {
         if (handler == null) {
             throw new IllegalArgumentException("handler == null");
         }
+        // 如果 codec 没有默认值，则添加 exchange。但是在基础参数设置中我们已经指定了编码器为 dubbo
         url = url.addParameterIfAbsent(Constants.CODEC_KEY, "exchange");
+        // 1. getExchanger(url) : 获取url 中的 exchanger 属性来获取到 Exchanger，默认是Header
+        // 2. bind(url, handler)：第一步中默认是HeaderExchanger，所以这里实际上是 HeaderExchanger#bind(url, handler)
         return getExchanger(url).bind(url, handler);
     }
 

@@ -384,6 +384,7 @@ public class DubboProtocol extends AbstractProtocol {
         ExchangeServer server;
         try {
             // 2.1 绑定ip端口，开启服务，这里server 默认是NettyServer，需要注意的是这里
+            // org.apache.dubbo.remoting.transport.netty4.NettyTransporter
             server = Exchangers.bind(url, requestHandler);
         } catch (RemotingException e) {
             throw new RpcException("Fail to start server(url: " + url + ") " + e.getMessage(), e);
