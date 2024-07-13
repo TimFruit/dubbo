@@ -194,31 +194,59 @@ public class RegistryProtocol implements Protocol {
                 registered));
     }
 
+    /**
+     * 暴露服务
+     * 原始 URL (originInvoker.getUrl() ) ：registry://localhost:2181/org.apache.dubbo.registry.RegistryService?application=Api-provider&dubbo=2.0.2&export=dubbo%3A%2F%2F192.168.111.1%3A20880%2Fapi.DemoService%3Fanyhost%3Dtrue%26application%3DApi-provider%26bind.ip%3D192.168.111.1%26bind.port%3D20880%26dubbo%3D2.0.2%26generic%3Dfalse%26group%3Ddubbo%26interface%3Dapi.DemoService%26methods%3DsayHelloForAsync%2CsayHello%2CsayMsg%2CsayHelloForAsyncByContext%26pid%3D11912%26register%3Dtrue%26release%3D2.7.0%26revision%3D1.0.0%26sayHello.retries%3D3%26side%3Dprovider%26timestamp%3D1616821309244%26version%3D1.0.0&pid=11912&registry=zookeeper&release=2.7.0&timestamp=1616821309240
+     *
+     * @param originInvoker Service invoker
+     * @return
+     * @param <T>
+     * @throws RpcException
+     */
     @Override
     public <T> Exporter<T> export(final Invoker<T> originInvoker) throws RpcException {
+        // 1.1 获取注册中心信息 URL
         URL registryUrl = getRegistryUrl(originInvoker);
         // url to export locally
+        // 1.2 获取 需要暴露的 服务URL信息 ： 通过 riginInvoker.getUrl().getParameterAndDecoded(EXPORT_KEY) 来获取
         URL providerUrl = getProviderUrl(originInvoker);
 
         // Subscribe the override data
         // FIXME When the provider subscribes, it will affect the scene : a certain JVM exposes the service and call
         //  the same service. Because the subscribed is cached key with the name of the service, it causes the
         //  subscription information to cover.
+
+        // 1.3 订阅override数据
+        // 提供者订阅时，会影响 同一JVM即暴露服务，又引用同一服务的的场景，
+        // 因为subscribed以服务名为缓存的key，导致订阅信息覆盖。
         final URL overrideSubscribeUrl = getSubscribedOverrideUrl(providerUrl);
         final OverrideListener overrideSubscribeListener = new OverrideListener(overrideSubscribeUrl, originInvoker);
         overrideListeners.put(overrideSubscribeUrl, overrideSubscribeListener);
 
+        // 2.7 版本新增，使用 ServiceConfigurationListener
+        // 和  ProviderConfigurationListener 来监听服务
+        // OverrideListener#notify
         providerUrl = overrideUrlWithConfig(providerUrl, overrideSubscribeListener);
         // export invoker
+
+
+
+        // 进行服务暴露，这里会调用真正协议的 export 方法 *** ===== 重点
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker, providerUrl);
 
         // url to registry
+        // 获取注册中心实例 ： 根据调用者的地址获取注册表的实
         final Registry registry = getRegistry(originInvoker);
+        // 获取 当前注册的服务提供者 URL，如果开启了简化 URL，则返回的是简化的URL
         final URL registeredProviderUrl = getUrlToRegistry(providerUrl, registryUrl);
 
         // decide if we need to delay publish
+        // 判断服务是否需要延迟发布，延迟发布则不会立即进行注册，否则进行注册
         boolean register = providerUrl.getParameter(REGISTER_KEY, true);
         if (register) {
+            // 调用远端注册中心的register方法进行服务注册
+            // 此时如果有消费者订阅了该服务，则推送消息让消费者引用此服务
+            // 注册中心缓存了所有提供者注册的服务以供消费者发现
             registry.register(registeredProviderUrl);
         }
 
@@ -230,10 +258,16 @@ public class RegistryProtocol implements Protocol {
         exporter.setSubscribeUrl(overrideSubscribeUrl);
 
         // Deprecated! Subscribe to override rules in 2.6.x or before.
+        // 不推荐使用！订阅以覆盖2.6.x或更早版本中的规则。
+        // 提供者向注册中心订阅所有注册服务,当注册中心有此服务的覆盖配置注册进来时，推送消息给提供者，重新暴露服务，这由管理页面完成。
+        // org.apache.dubbo.registry.support.FailbackRegistry#subscribe
+        // 向注册中心进行订阅 override 数据
         registry.subscribe(overrideSubscribeUrl, overrideSubscribeListener);
 
         notifyExport(exporter);
         //Ensure that a new exporter instance is returned every time export
+        //  保证每次export都返回一个新的exporter实例
+        // 返回暴露后的Exporter给上层ServiceConfig进行缓存，便于后期撤销暴露。
         return new DestroyableExporter<>(exporter);
     }
 
@@ -248,18 +282,29 @@ public class RegistryProtocol implements Protocol {
     }
 
     private URL overrideUrlWithConfig(URL providerUrl, OverrideListener listener) {
+        // 1. 获取应用级别现有配置规则，并在导出之前覆盖提供程序URL。
+        //ProviderConfigurationListener 应用级别监听器，因为一个程序只能有一个应用名
         providerUrl = providerConfigurationListener.overrideUrl(providerUrl);
+        // 2. 初始化服务级别监听器，并保存到 serviceConfigurationListeners 中，完成了对当前服务的监听。
+        // 服务级别监听器。因为一个程序可以提供多个 Dubbo 接口服务
         ServiceConfigurationListener serviceConfigurationListener = new ServiceConfigurationListener(providerUrl, listener);
         serviceConfigurationListeners.put(providerUrl.getServiceKey(), serviceConfigurationListener);
+        // 3. 获取服务级别现有配置规则，并在导出之前覆盖提供程序URL。
         return serviceConfigurationListener.overrideUrl(providerUrl);
     }
 
     @SuppressWarnings("unchecked")
     private <T> ExporterChangeableWrapper<T> doLocalExport(final Invoker<T> originInvoker, URL providerUrl) {
+        //  将 originInvoker 转换为 缓存key，从 bounds 缓存中尝试获取
         String key = getCacheKey(originInvoker);
 
         return (ExporterChangeableWrapper<T>) bounds.computeIfAbsent(key, s -> {
+
+            // Invoker 委托
             Invoker<?> invokerDelegate = new InvokerDelegate<>(originInvoker, providerUrl);
+            // 这里注意： protocol.export(invokerDelegete) 中 protocol 在 RegistryProtocol 在创建的时候依赖注入的，其实现还是Protocol适配器
+            // Protocol$Adaptive#export() => QosProtocolWrapper#export()  => ProtocolListenerWrapper #export() => ProtocolFilterWrapper#export()  => XxxProtocol#export()
+            // 在第二次包装之后会调用DubboProtocol#export方法暴露
             return new ExporterChangeableWrapper<>((Exporter<T>) protocol.export(invokerDelegate), originInvoker);
         });
     }
@@ -427,6 +472,8 @@ public class RegistryProtocol implements Protocol {
     }
 
     private URL getSubscribedOverrideUrl(URL registeredProviderUrl) {
+        // 1. protocol 修改为 provider。表明当前服务监听的是应用于服务提供者端的配置(消费者端则为 consumer)；
+        // 2. 添加 category configurators。声明监听的节点为 configurators  节点（消费者还会监听 routers、provider 等节点）。
         return registeredProviderUrl.setProtocol(PROVIDER_PROTOCOL)
                 .addParameters(CATEGORY_KEY, CONFIGURATORS_CATEGORY, CHECK_KEY, String.valueOf(false));
     }
@@ -701,19 +748,21 @@ public class RegistryProtocol implements Protocol {
         @Override
         public synchronized void notify(List<URL> urls) {
             LOGGER.debug("original override urls: " + urls);
-
+            // 获取 可以用于当前服务配置
             List<URL> matchedUrls = getMatchedUrls(urls, subscribeUrl.addParameter(CATEGORY_KEY,
                     CONFIGURATORS_CATEGORY));
             LOGGER.debug("subscribe url: " + subscribeUrl + ", override urls: " + matchedUrls);
 
             // No matching results
+            // 没有可用于当前服务的配置则返回。
             if (matchedUrls.isEmpty()) {
                 return;
             }
-
+            // 挑选出 配置节点URL  并转换为 configurators, 后面会通过 configurators进行合并
             this.configurators = Configurator.toConfigurators(classifyUrls(matchedUrls, UrlUtils::isConfigurator))
                     .orElse(configurators);
 
+            // 在必要的情况下覆盖配置，此时对configurators 的数据进行合并，并缓存到服务本地
             doOverrideIfNecessary();
         }
 
@@ -725,6 +774,8 @@ public class RegistryProtocol implements Protocol {
                 invoker = originInvoker;
             }
             //The origin invoker
+            // 获取 原始 URL
+            // 获取当前 URL，当前URL，可能已经合并过很多次，所以并不一定等同于 originUrl
             URL originUrl = RegistryProtocol.this.getProviderUrl(invoker);
             String key = getCacheKey(originInvoker);
             ExporterChangeableWrapper<?> exporter = bounds.get(key);
@@ -736,12 +787,17 @@ public class RegistryProtocol implements Protocol {
             Invoker<?> exporterInvoker = exporter.getInvoker();
             URL currentUrl = exporterInvoker == null ? null : exporterInvoker.getUrl();
             //Merged with this configuration
+            // Dubbo 2.6 版本逻辑 使用originUrl 与当前配置合并后，产生新  url
             URL newUrl = getConfiguredInvokerUrl(configurators, originUrl);
+            // dubbo 2.7.0 版本新增，也是配置合并，合并服务级别配置和应用级别配置
             newUrl = getConfiguredInvokerUrl(providerConfigurationListener.getConfigurators(), newUrl);
             newUrl = getConfiguredInvokerUrl(serviceConfigurationListeners.get(originUrl.getServiceKey())
                     .getConfigurators(), newUrl);
+
+            // currentUrl != newUrl, 则说明配置有变动，则重新发布服务
             if (!newUrl.equals(currentUrl)) {
                 if(newUrl.getParameter(Constants.NEED_REEXPORT, true)) {
+                    // 重新发布服务
                     RegistryProtocol.this.reExport(originInvoker, newUrl);
                 }
                 LOGGER.info("exported provider url changed, origin url: " + originUrl +

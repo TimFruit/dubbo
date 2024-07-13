@@ -106,6 +106,8 @@ public class Exchangers {
             throw new IllegalArgumentException("handler == null");
         }
 //        url = url.addParameterIfAbsent(Constants.CODEC_KEY, "exchange");
+        // 1. getExchanger(url) 获取的是Exchanger$Adaptive，最终调用的是 HeaderExchanger
+        // 2. connect(url, handler) 调用的是 HeaderExchanger#connect
         return getExchanger(url).connect(url, handler);
     }
 

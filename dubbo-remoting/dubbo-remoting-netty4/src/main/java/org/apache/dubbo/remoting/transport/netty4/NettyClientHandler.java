@@ -77,17 +77,21 @@ public class NettyClientHandler extends ChannelDuplexHandler {
         }
     }
 
+    // 通道读，接收服务端回复消息
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         NettyChannel channel = NettyChannel.getOrAddChannel(ctx.channel(), url, handler);
         handler.received(channel, msg);
     }
 
+    // 通道写，向服务端发送请求
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         super.write(ctx, msg, promise);
         final NettyChannel channel = NettyChannel.getOrAddChannel(ctx.channel(), url, handler);
         final boolean isRequest = msg instanceof Request;
+
+        // 如果写入发生错误，请模拟BAD_REQUEST响应，以便调用者可以立即返回而无需等待超时。
 
         // We add listeners to make sure our out bound event is correct.
         // If our out bound event has an error (in most cases the encoder fails),
