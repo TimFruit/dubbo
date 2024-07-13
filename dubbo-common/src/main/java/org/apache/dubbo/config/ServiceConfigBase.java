@@ -52,6 +52,7 @@ public abstract class ServiceConfigBase<T> extends AbstractServiceConfig {
 
     /**
      * The reference of the interface implementation
+     * 接口实现类
      */
     protected T ref;
 
@@ -207,7 +208,7 @@ public abstract class ServiceConfigBase<T> extends AbstractServiceConfig {
         if (CollectionUtils.isEmpty(protocols) && provider != null) {
             setProtocols(provider.getProtocols());
         }
-        convertProtocolIdsToProtocols();
+        convertProtocolIdsToProtocols(); //添加默认协议配置
     }
 
     private boolean notHasSelfProtocolProperty() {
@@ -233,9 +234,9 @@ public abstract class ServiceConfigBase<T> extends AbstractServiceConfig {
                 List<ProtocolConfig> protocolConfigs = ApplicationModel.getConfigManager().getDefaultProtocols();
                 if (protocolConfigs.isEmpty()) {
                     protocolConfigs = new ArrayList<>(1);
-                    ProtocolConfig protocolConfig = new ProtocolConfig();
+                    ProtocolConfig protocolConfig = new ProtocolConfig();//没有设置则在这里听见爱默认的ProtocolConfig
                     protocolConfig.setDefault(true);
-                    protocolConfig.refresh();
+                    protocolConfig.refresh();//内部设置默认协议dubbo
                     protocolConfigs.add(protocolConfig);
                     ApplicationModel.getConfigManager().addProtocol(protocolConfig);
                 }

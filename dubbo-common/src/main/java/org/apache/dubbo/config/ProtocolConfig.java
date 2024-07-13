@@ -36,6 +36,7 @@ public class ProtocolConfig extends AbstractConfig {
 
     /**
      * Protocol name
+     * 协议名称
      */
     private String name;
 

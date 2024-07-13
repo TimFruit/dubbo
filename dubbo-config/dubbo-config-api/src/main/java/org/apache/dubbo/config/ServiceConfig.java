@@ -221,14 +221,14 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
             bootstrap.initialize();
         }
 
-        //对默认配置进行检查，某些配置没有提供时，提供缺省值。
+        //对默认配置进行检查，某些配置没有提供时，提供缺省值。 包括providerConfig,protocolConfig,registryConfig
         // 对提供者启动时的大部分参数进行了合法性校验。包括配置中心、元数据中心、本地存根、本地mock等
         checkAndUpdateSubConfigs();
 
         // 初始化元数据 包括 version,group,interfaceName
         initServiceMetadata(provider);
-        serviceMetadata.setServiceType(getInterfaceClass());
-        serviceMetadata.setTarget(getRef());
+        serviceMetadata.setServiceType(getInterfaceClass()); //接口
+        serviceMetadata.setTarget(getRef());  //接口实现类
         serviceMetadata.generateServiceKey();
 
         // 如果不导出服务，则直接结束
@@ -271,12 +271,12 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
 
     private void checkAndUpdateSubConfigs() {
         // 1.1 使用显示配置的provider、module、application 来进行一些全局配置，
-        // 其优先级为 ServiceConfig（服务自身设置的配置） > provider > module > application
+        // 其优先级为 ServiceConfig（服务自身设置的配置） > providerConfig > module > application
         // Use default configs defined explicitly with global scope
         // 对默认参数的检查，如果不存在则补充一个缺省值
         completeCompoundConfigs(); // 没有设置则使用provider的配置，协议
         checkDefault();
-        checkProtocol();
+        checkProtocol(); //检查配置默认ProtocolConfig,如果没有的话就会添加一个默认dubbo协议配置
         // init some null configuration.
         List<ConfigInitializer> configInitializers = ExtensionLoader.getExtensionLoader(ConfigInitializer.class)
                 .getActivateExtension(URL.valueOf(CONFIG_INITIALIZER_PROTOCOL), (String[]) null);
@@ -284,7 +284,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
 
         // if protocol is not injvm checkRegistry
         if (!isOnlyInJvm()) { // 不是本地协议
-            checkRegistry();
+            checkRegistry();//检查registryConfig
         }
         // 将当前配置添加到环境中, 并且循环方法，并且获取覆盖值并将新值设置回方法
         this.refresh();
@@ -342,9 +342,9 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
     private void doExportUrls() {
         // repository 导出url
         logger.info(">>>ttx 暴露url start");
-        ServiceRepository repository = ApplicationModel.getServiceRepository();
+        ServiceRepository repository = ApplicationModel.getServiceRepository(); //存储服务描述符
         ServiceDescriptor serviceDescriptor = repository.registerService(getInterfaceClass());
-        repository.registerProvider(
+        repository.registerProvider( //内存存储服务提供者信息
                 getUniqueServiceName(),
                 ref,
                 serviceDescriptor,

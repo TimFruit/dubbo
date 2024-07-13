@@ -504,7 +504,7 @@ public class ConfigValidationUtils {
             checkPathName(CONTEXTPATH_KEY, config.getContextpath());
 
 
-            if (DUBBO_PROTOCOL.equals(name)) {
+            if (DUBBO_PROTOCOL.equals(name)) {//默认是dubbo协议
                 checkMultiExtension(Codec2.class, CODEC_KEY, config.getCodec());
                 checkMultiExtension(Serialization.class, SERIALIZATION_KEY, config.getSerialization());
                 checkMultiExtension(Transporter.class, SERVER_KEY, config.getServer());
