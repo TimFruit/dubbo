@@ -203,8 +203,8 @@ class URL implements Serializable {
                String password,
                String host,
                int port,
-               String path,
-               Map<String, String> parameters,
+               String path, //前几个参数是主要参数
+               Map<String, String> parameters, //其他参数以键值对表示
                Map<String, Map<String, String>> methodParameters) {
         this.protocol = protocol;
         this.username = username;
