@@ -356,7 +356,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
             // 如果url不为空，则说明可能会进行点对点调用，即服务直连(**消费者通过配置直接指定了提供者的地址)
             // 这里的 url 是在 ReferenceConfig#init 中 调用 ReferenceConfig#resolveFile 方法解析获取。
             if (url != null && url.length() > 0) { // user specified URL, could be peer-to-peer address, or register center's address.
-                // 当需要配置多个 url 时，可用分号进行分割，这里会进行切分
+                // 当需要配置多个 url 时，可用分号进行分割，这里会进行切分   配置指定了直连url
                 String[] us = SEMICOLON_SPLIT_PATTERN.split(url);
                 if (us != null && us.length > 0) {
                     for (String u : us) {
@@ -491,7 +491,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
         if (StringUtils.isEmpty(interfaceName)) {
             throw new IllegalStateException("<dubbo:reference interface=\"\" /> interface not allow null!");
         }
-        // 按照一定优先级整合配置
+        // 按照一定优先级整合配置 ApplictionConfig,ModuleCnfig,RegistryConfig,MonitoryConfig
         completeCompoundConfigs(consumer);
         // get consumer's global configuration
         // 消费者缺省校验

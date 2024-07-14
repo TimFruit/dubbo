@@ -150,7 +150,7 @@ public class RegistryDirectory<T> extends DynamicDirectory<T> {
             }
         }
 
-        //刷新invoker
+        //刷新invoker  会调用DubboerPtotocol#refer构建invoker
         refreshOverrideAndInvoker(providerURLs);
     }
 
@@ -169,7 +169,7 @@ public class RegistryDirectory<T> extends DynamicDirectory<T> {
     private synchronized void refreshOverrideAndInvoker(List<URL> urls) {
         // mock zookeeper://xxx?mock=return null
         overrideDirectoryUrl();
-        refreshInvoker(urls);
+        refreshInvoker(urls); // 会调用DubboerPtotocol#refer构建invoker
     }
 
     /**
@@ -209,6 +209,7 @@ public class RegistryDirectory<T> extends DynamicDirectory<T> {
                 return;
             }
             this.forbidden = false; // Allow to access
+            // 会调用DubboerPtotocol#refer构建invoker
             Map<URL, Invoker<T>> newUrlInvokerMap = toInvokers(invokerUrls);// Translate url list to Invoker map
 
             /**
@@ -347,6 +348,8 @@ public class RegistryDirectory<T> extends DynamicDirectory<T> {
                         enabled = url.getParameter(ENABLED_KEY, true);
                     }
                     if (enabled) {
+                        // 重点
+                        // 这里会调用DubboreReference#refer构建 invoker ***
                         invoker = new InvokerDelegate<>(protocol.refer(serviceType, url), url, providerUrl);
                     }
                 } catch (Throwable t) {

@@ -913,7 +913,7 @@ public class DubboBootstrap {
                 //3. Register the local ServiceInstance if required
                 registerServiceInstance();
             }
-
+            // 2. 这里构造消费者 ** 重点 referenceConfig 由外部传递过来的
             referServices();
             if (asyncExportingFutures.size() > 0) {
                 new Thread(() -> {
@@ -1154,7 +1154,7 @@ public class DubboBootstrap {
                     );
                     asyncReferringFutures.add(future);
                 } else {
-                    cache.get(rc);
+                    cache.get(rc); //内部会调ReferenceConfig#get获取
                 }
             }
         });

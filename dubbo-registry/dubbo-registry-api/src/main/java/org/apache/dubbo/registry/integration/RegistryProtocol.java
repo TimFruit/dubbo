@@ -537,7 +537,7 @@ public class RegistryProtocol implements Protocol {
         URL consumerUrl = new URL(CONSUMER_PROTOCOL, parameters.remove(REGISTER_IP_KEY), 0, type.getName(), parameters);
         // 一个注册中心可能有多个服务提供者，因此这里需要将多个服务提供者合并为一
         ClusterInvoker<T> migrationInvoker = getMigrationInvoker(this, cluster, registry, type, url, consumerUrl);
-        // listener(MigrationRuleListener)处理构造对应的Invokder
+        // 添加监听器，listener(MigrationRuleListener)处理构造对应的Invokder
         return interceptInvoker(migrationInvoker, url, consumerUrl);
     }
 
@@ -545,6 +545,7 @@ public class RegistryProtocol implements Protocol {
                                                         Class<T> type, URL url, URL consumerUrl) {
 
         // 后续这个interceptInvoker会通过监听器回调方法#migrateToServiceDiscoveryInvoker构造内部的invoker
+        // 最后调用本类getInvoker方法构造
         return new ServiceDiscoveryMigrationInvoker<T>(registryProtocol, cluster, registry, type, url, consumerUrl);
     }
 
@@ -602,7 +603,7 @@ public class RegistryProtocol implements Protocol {
 
         // 2. *** 订阅 providers、configurators、routers 等节点数据
         // 订阅引用服务的相关节点。当提供者相关信息更新后，消费者通过订阅的这些节点可以感知并更新自身的引用信息
-        // Registry.subscribe 会注册监听器 RegistryDirectory-实现了NotifyListener，注册中心回调之后调用#
+        // Registry.subscribe 会注册监听器 RegistryDirectory-实现了NotifyListener，注册中心回调之后调用#  ---------- 回调构调用DubboProtocol#refer构建invoker，构建nettyClient,连接服务提供者的nettyServer
         // toSubscribeUrl(urlToRegistry) = consumer://192.168.1.166/org.apache.dubbo.rpc.service.GenericService?application=dubbo-demo-api-consumer&category=providers,configurators,routers&dubbo=2.0.2&generic=true&interface=org.apache.dubbo.demo.DemoService&pid=12948&side=consumer&sticky=false&timestamp=1720535526794
         directory.subscribe(toSubscribeUrl(urlToRegistry));
 

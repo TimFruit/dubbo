@@ -42,6 +42,12 @@ public class MyNacosConsumerApplication {
         referenceConfig.setInterface(DemoService.class);
         referenceConfig.setGeneric("true");
 
+//        referenceConfig.setUrl("dubbo://127.0.0.1:20880");
+
+        //指定多个url  cluster - available
+//        referenceConfig.setUrl("dubbo://127.0.0.1:20880;dubbo://127.0.0.1:20881");
+//        referenceConfig.setCluster("available");
+
         DubboBootstrap bootstrap = DubboBootstrap.getInstance();
         bootstrap.application(new ApplicationConfig("dubbo-demo-api-consumer"))
                 .registry(new RegistryConfig("nacos://127.0.0.1:8848"))
