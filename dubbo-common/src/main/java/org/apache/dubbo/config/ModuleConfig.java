@@ -25,7 +25,8 @@ import java.util.List;
 
 /**
  * The module info
- *
+ *  用于配置当前模块信息，可选，用处不大，只是为了配置补充
+ *  https://segmentfault.com/a/1190000040895921
  * @export
  */
 public class ModuleConfig extends AbstractConfig {
