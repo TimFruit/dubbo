@@ -34,8 +34,8 @@ import static org.apache.dubbo.config.Constants.ON_THROW_METHOD_KEY;
 
 /**
  * The method configuration
- *
- * @export
+ *  也是有注解配置的 {@link Method} {@link org.apache.dubbo.config.ReferenceConfigTest}
+ * @exportd
  */
 public class MethodConfig extends AbstractMethodConfig {
 

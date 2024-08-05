@@ -401,6 +401,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
         // 对 methods 配置的解析，即是对参数的解析并保存到 map 中
         if (CollectionUtils.isNotEmpty(getMethods())) {
             // 添加 MethodConfig 对象的字段信息到 map 中，键 = 方法名.属性名。
+            // 这个也是有方法注解的 @Method
             // 比如存储 <dubbo:method name="sayHello" retries="2"> 对应的 MethodConfig，
             // 键 = sayHello.retries，map = {"sayHello.retries": 2, "xxx": "yyy"}
             for (MethodConfig method : getMethods()) {
