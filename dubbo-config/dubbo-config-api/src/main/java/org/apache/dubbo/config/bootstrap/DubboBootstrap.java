@@ -1154,7 +1154,7 @@ public class DubboBootstrap {
                     );
                     asyncReferringFutures.add(future);
                 } else {
-                    cache.get(rc); //内部会调ReferenceConfig#get获取
+                    cache.get(rc); //注意这里内部代码，内部会调ReferenceConfig#get获取
                 }
             }
         });
