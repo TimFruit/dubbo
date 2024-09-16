@@ -54,17 +54,20 @@ public class MyNacosConsumerApplication {
                 .reference(referenceConfig)
                 .start();
 
+        // 1. 直接使用代理方法调用
+        System.out.println(">>>>>> 1.发起调用  >>>>>>");
         DemoService demoService = ReferenceConfigCache.getCache().get(referenceConfig);
         String message = demoService.sayHello("dubbo");
         System.out.println(message);
+        System.out.println(">>>>>> 1.调用结果  >>>>>>");
 
-        System.out.println(">>>>>> 发起调用  >>>>>>");
-        // generic invoke
+        System.out.println(">>>>>> 2.发起调用  >>>>>>");
+        // 2. generic invoke
         GenericService genericService = (GenericService) demoService;
         Object genericInvokeResult = genericService.$invoke("sayHello", new String[] { String.class.getName() },
                 new Object[] { "dubbo generic invoke" });
 
-        System.out.println(">>>>>> 调用结果  >>>>>>");
+        System.out.println(">>>>>> 2.调用结果  >>>>>>");
         System.out.println(genericInvokeResult);
         System.out.println(">>>>>> 调用结束  >>>>>>");
     }

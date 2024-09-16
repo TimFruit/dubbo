@@ -462,7 +462,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
 
         // create service proxy
         /*******  5. 代理类的创建  ******/
-        // 生成代理类
+        // 生成代理类   内部处理器 InvokerInvocationHandler   invoker是 MigrationInvoker
         return (T) PROXY_FACTORY.getProxy(invoker, ProtocolUtils.isGeneric(generic));
     }
 

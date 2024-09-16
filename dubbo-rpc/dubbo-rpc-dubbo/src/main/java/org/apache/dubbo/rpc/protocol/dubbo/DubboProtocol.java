@@ -444,7 +444,7 @@ public class DubboProtocol extends AbstractProtocol {
         optimizeSerialization(url);
 
         // create rpc invoker.
-        // 创建与服务提供者的 Netty 连接。
+        // 重点是这个 创建与服务提供者的 Netty 连接。
         DubboInvoker<T> invoker = new DubboInvoker<T>(serviceType, url, getClients(url), invokers);
         invokers.add(invoker);
 

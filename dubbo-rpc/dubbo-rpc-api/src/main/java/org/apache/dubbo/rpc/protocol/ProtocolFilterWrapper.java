@@ -35,19 +35,29 @@ import static org.apache.dubbo.common.constants.CommonConstants.SERVICE_FILTER_K
 
 /**
  * ListenerProtocol
+ * 构建过滤器Filter
  */
 @Activate(order = 100)
 public class ProtocolFilterWrapper implements Protocol {
 
     private final Protocol protocol;
 
-    public ProtocolFilterWrapper(Protocol protocol) {
+    public ProtocolFilterWrapper(Protocol protocol) { //这个是拷贝构造函数， 被认为是包装方法， 做一些公共逻辑，然后调用真正的方法处理
         if (protocol == null) {
             throw new IllegalArgumentException("protocol == null");
         }
         this.protocol = protocol;
     }
 
+    /**
+     * 构建过滤器Filter
+     *
+     * @param invoker
+     * @param key
+     * @param group
+     * @return
+     * @param <T>
+     */
     private static <T> Invoker<T> buildInvokerChain(final Invoker<T> invoker, String key, String group) {
         Invoker<T> last = invoker;
         List<Filter> filters = ExtensionLoader.getExtensionLoader(Filter.class).getActivateExtension(invoker.getUrl(), key, group);

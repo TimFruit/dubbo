@@ -78,6 +78,12 @@ public abstract class AbstractProxyInvoker<T> implements Invoker<T> {
     public void destroy() {
     }
 
+    /**
+     * 提供者 调用 具体服务实现方法
+     * @param invocation
+     * @return
+     * @throws RpcException
+     */
     @Override
     public Result invoke(Invocation invocation) throws RpcException {
         try {

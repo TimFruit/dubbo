@@ -22,6 +22,7 @@ import org.apache.dubbo.rpc.Exporter;
 import org.apache.dubbo.rpc.Invoker;
 
 /**
+ * 提供者暴露服务
  * AbstractExporter.
  */
 public abstract class AbstractExporter<T> implements Exporter<T> {

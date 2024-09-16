@@ -50,6 +50,7 @@ import static org.apache.dubbo.remoting.Constants.SERIALIZATION_KEY;
 import static org.apache.dubbo.rpc.Constants.SERIALIZATION_ID_KEY;
 
 /**
+ * 这个包装给消费者
  * This Invoker works on Consumer side.
  */
 public abstract class AbstractInvoker<T> implements Invoker<T> {
@@ -136,6 +137,12 @@ public abstract class AbstractInvoker<T> implements Invoker<T> {
         return getInterface() + " -> " + (getUrl() == null ? "" : getUrl().toString());
     }
 
+    /**
+     * 这个包装给消费者， 消费者调用方法
+     * @param inv
+     * @return
+     * @throws RpcException
+     */
     @Override
     public Result invoke(Invocation inv) throws RpcException {
         // if invoker is destroyed due to address refresh from registry, let's allow the current invoke to proceed

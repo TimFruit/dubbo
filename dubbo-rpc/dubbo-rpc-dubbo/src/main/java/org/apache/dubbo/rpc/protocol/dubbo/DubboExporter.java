@@ -21,6 +21,7 @@ import org.apache.dubbo.rpc.protocol.AbstractExporter;
 import org.apache.dubbo.rpc.protocol.DelegateExporterMap;
 
 /**
+ * dubbo提供者暴露服务
  * DubboExporter
  */
 public class DubboExporter<T> extends AbstractExporter<T> {

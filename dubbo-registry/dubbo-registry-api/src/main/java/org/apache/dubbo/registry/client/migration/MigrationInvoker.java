@@ -24,6 +24,7 @@ import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.common.utils.StringUtils;
 import org.apache.dubbo.registry.Registry;
 import org.apache.dubbo.registry.integration.DynamicDirectory;
+import org.apache.dubbo.registry.integration.InterfaceCompatibleRegistryProtocol;
 import org.apache.dubbo.registry.integration.RegistryProtocol;
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Result;
@@ -39,6 +40,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.apache.dubbo.rpc.cluster.Constants.REFER_KEY;
 
+/**
+ * 最终会返回这个invoker
+ *
+ * {@link InterfaceCompatibleRegistryProtocol#getMigrationInvoker(RegistryProtocol, Cluster, Registry, Class, URL, URL)}
+ *
+ * @param <T>
+ */
 public class MigrationInvoker<T> implements MigrationClusterInvoker<T> {
     private Logger logger = LoggerFactory.getLogger(MigrationInvoker.class);
 
@@ -50,6 +58,8 @@ public class MigrationInvoker<T> implements MigrationClusterInvoker<T> {
     private RegistryProtocol registryProtocol;
 
     private volatile ClusterInvoker<T> invoker;
+
+    // 服务注册发现创建的Invoker (Protocol#refer)  #refreshServiceDiscoveryInvoker 创建
     private volatile ClusterInvoker<T> serviceDiscoveryInvoker;
     private volatile ClusterInvoker<T> currentAvailableInvoker;
 
@@ -161,6 +171,12 @@ public class MigrationInvoker<T> implements MigrationClusterInvoker<T> {
         });
     }
 
+    /**
+     * 调用方法
+     * @param invocation
+     * @return
+     * @throws RpcException
+     */
     @Override
     public Result invoke(Invocation invocation) throws RpcException {
         if (!checkInvokerAvailable(serviceDiscoveryInvoker)) {

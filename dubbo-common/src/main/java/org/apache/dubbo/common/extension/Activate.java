@@ -85,7 +85,7 @@ public @interface Activate {
 
     /**
      * Absolute ordering info, optional
-     *
+     * 值越大越前
      * @return absolute ordering info
      */
     int order() default 0;

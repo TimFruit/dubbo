@@ -35,8 +35,11 @@ public interface Invoker<T> extends Node {
     Class<T> getInterface();
 
     /**
-     * invoke.
+     * invoke.  调用方法
      *
+     * 包装消费者或提供者 调用方法
+     *  消费者 AbstractInvoker 远程调用方法
+     *  提供者 AbstractProxyInvoker  调用具体实现方法
      * @param invocation
      * @return result
      * @throws RpcException
