@@ -538,7 +538,7 @@ public class RegistryProtocol implements Protocol {
         // 一个注册中心可能有多个服务提供者，因此这里需要将多个服务提供者合并为一
         // 最终是返回这个migrationInvoker - 会返回MigrationInvoker  -   使用这个协议InterfaceCompatibleRegistryProtocol
         ClusterInvoker<T> migrationInvoker = getMigrationInvoker(this, cluster, registry, type, url, consumerUrl);
-        // 添加监听器，listener(MigrationRuleListener)处理构造对应的Invokder
+        // 添加监听器 MigrationRuleListener，listener(MigrationRuleListener)处理构造对应的Invokder
         return interceptInvoker(migrationInvoker, url, consumerUrl);
     }
 
